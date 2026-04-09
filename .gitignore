@@ -1,0 +1,16 @@
+# Virtual Environments
+venv/
+.venv/
+
+# Node environment
+node_modules/
+frontend/node_modules/
+
+# Cache directories
+__pycache__/
+.history_cache/
+.news_cache/
+.DS_Store
+
+# Data files containing personal state
+*portfolio.json

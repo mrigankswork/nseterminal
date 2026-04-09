@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NSE Terminal — Live Market Analysis</title>
+    <meta name="description"
+        content="AI-powered NSE options trading bot with live data, backtesting, and strategy recommendations for Indian stock market.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay">
+        <div class="loader-container">
+            <div class="pulse-ring"></div>
+            <div class="pulse-ring delay-1"></div>
+            <div class="pulse-ring delay-2"></div>
+            <div class="loader-icon">[NSE]</div>
+            <p class="loader-text">CONNECTING TO NSE FEED...</p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-icon">[T]</span>
+                <h1>NSE<span class="logo-accent">TERMINAL</span></h1>
+            </div>
+            <nav class="nav">
+                <button class="nav-btn active" data-tab="dashboard" id="nav-dashboard">MARKET</button>
+                <button class="nav-btn" data-tab="advisor" id="nav-advisor">AI ADVISOR</button>
+                <button class="nav-btn" data-tab="recommendations" id="nav-recommendations">SIGNALS</button>
+                <button class="nav-btn" data-tab="spreads" id="nav-spreads">SPREADS</button>
+                <button class="nav-btn" data-tab="backtest" id="nav-backtest">BACKTEST</button>
+                <button class="nav-btn" data-tab="paper-trade" id="nav-paper-trade">PAPER TRADE</button>
+                <button class="nav-btn nav-btn-auto" data-tab="auto-trader" id="nav-auto-trader">🤖 AUTO TRADER</button>
+                <button class="nav-btn nav-btn-crypto" data-tab="crypto-trader" id="nav-crypto-trader" style="color: #f7931a; border-color: rgba(247,147,26,0.3);">₿ CRYPTO TRADER</button>
+            </nav>
+            <div class="header-right">
+                <div class="global-search-container">
+                    <input type="text" id="global-search-input" class="global-search-input" placeholder="Search symbol... (e.g. INFY)">
+                    <button class="global-search-btn" id="global-search-btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="market-status" id="market-status">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Loading...</span>
+                </div>
+                <button class="refresh-btn" id="refresh-btn" title="Refresh Data">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Dashboard Tab -->
+        <section id="tab-dashboard" class="tab-content active">
+            <!-- Market Overview Strip -->
+            <div class="market-strip" id="market-strip">
+                <div class="strip-card">
+                    <span class="strip-label">NIFTY 50</span>
+                    <span class="strip-value" id="nifty-value">--</span>
+                    <span class="strip-change" id="nifty-change">--</span>
+                </div>
+            </div>
+
+            <!-- Top Movers -->
+            <div class="section-header">
+                <h2>MARKET MOVERS</h2>
+                <span class="badge">LIVE</span>
+            </div>
+            <div class="movers-grid">
+                <div class="movers-card gainers-card">
+                    <h3 class="movers-title green">GAINERS</h3>
+                    <div id="gainers-list" class="movers-list"></div>
+                </div>
+                <div class="movers-card losers-card">
+                    <h3 class="movers-title red">LOSERS</h3>
+                    <div id="losers-list" class="movers-list"></div>
+                </div>
+            </div>
+
+            <!-- Chart Section -->
+            <div class="section-header">
+                <h2>CHART</h2>
+                <div class="chart-controls">
+                    <select id="chart-symbol-select" class="select-input">
+                        <option value="RELIANCE">RELIANCE</option>
+                        <option value="TCS">TCS</option>
+                        <option value="HDFCBANK">HDFCBANK</option>
+                        <option value="INFY">INFY</option>
+                        <option value="ICICIBANK">ICICIBANK</option>
+                        <option value="SBIN">SBIN</option>
+                        <option value="BHARTIARTL">BHARTIARTL</option>
+                        <option value="TATAMOTORS">TATAMOTORS</option>
+                        <option value="ITC">ITC</option>
+                        <option value="KOTAKBANK">KOTAKBANK</option>
+                        <option value="HINDUNILVR">HINDUNILVR</option>
+                        <option value="LT">LT</option>
+                        <option value="AXISBANK">AXISBANK</option>
+                        <option value="BAJFINANCE">BAJFINANCE</option>
+                        <option value="SUNPHARMA">SUNPHARMA</option>
+                        <option value="TITAN">TITAN</option>
+                        <option value="MARUTI">MARUTI</option>
+                        <option value="WIPRO">WIPRO</option>
+                        <option value="HCLTECH">HCLTECH</option>
+                        <option value="NTPC">NTPC</option>
+                    </select>
+                    <button class="icon-btn" id="chart-expand-btn" title="Expand Chart">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                        </svg>
+                    </button>
+                    <button class="icon-btn" id="stock-info-btn" title="Stock Info & News">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 16v-4M12 8h.01" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chart Toolbar -->
+            <div class="chart-toolbar">
+                <div class="toolbar-group">
+                    <span class="toolbar-label">Type</span>
+                    <div class="btn-group" id="chart-type-group">
+                        <button class="tool-btn active" data-type="candlestick" title="Candlestick">OHLC</button>
+                        <button class="tool-btn" data-type="line" title="Line">LINE</button>
+                        <button class="tool-btn" data-type="area" title="Area">AREA</button>
+                    </div>
+                </div>
+                <div class="toolbar-divider"></div>
+                <div class="toolbar-group">
+                    <span class="toolbar-label">Period</span>
+                    <div class="btn-group" id="timeframe-group">
+                        <button class="tool-btn" data-tf="1W">1W</button>
+                        <button class="tool-btn" data-tf="1M">1M</button>
+                        <button class="tool-btn" data-tf="3M">3M</button>
+                        <button class="tool-btn active" data-tf="6M">6M</button>
+                        <button class="tool-btn" data-tf="1Y">1Y</button>
+                        <button class="tool-btn" data-tf="ALL">ALL</button>
+                    </div>
+                </div>
+                <div class="toolbar-divider"></div>
+                <div class="toolbar-group">
+                    <span class="toolbar-label">Indicators</span>
+                    <div class="indicator-toggles" id="indicator-toggles">
+                        <label class="indicator-toggle">
+                            <input type="checkbox" data-indicator="sma20"> <span>SMA 20</span>
+                        </label>
+                        <label class="indicator-toggle">
+                            <input type="checkbox" data-indicator="sma50"> <span>SMA 50</span>
+                        </label>
+                        <label class="indicator-toggle">
+                            <input type="checkbox" data-indicator="ema20"> <span>EMA 20</span>
+                        </label>
+                        <label class="indicator-toggle">
+                            <input type="checkbox" data-indicator="bollinger"> <span>BB</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="toolbar-divider"></div>
+                <div class="toolbar-group">
+                    <span class="toolbar-label">Height</span>
+                    <input type="range" id="chart-height-slider" class="height-slider" min="300" max="800" value="480"
+                        step="20">
+                    <span id="chart-height-value" class="height-value">480px</span>
+                </div>
+            </div>
+
+            <div class="chart-container" id="main-chart-container">
+                <div id="main-chart" class="chart-area"></div>
+                <div id="chart-info-bar" class="chart-info-bar">
+                    <span id="chart-stock-name" class="chart-stock-name"></span>
+                    <span id="chart-ohlc" class="chart-ohlc"></span>
+                </div>
+            </div>
+
+            <!-- Market News Feed -->
+            <div class="news-section" id="news-section">
+                <div class="news-section-header">
+                    <h3>NEWS FEED</h3>
+                    <span class="badge" id="news-feed-badge">LOADING</span>
+                </div>
+                <div class="news-ticker" id="news-ticker">
+                    <div class="panel-loading">Loading market news...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recommendations Tab -->
+        <section id="tab-recommendations" class="tab-content">
+            <div class="section-header">
+                <h2>BUY SIGNALS</h2>
+                <span class="badge">BULLISH</span>
+            </div>
+            <div class="rec-grid" id="buy-recommendations"></div>
+
+            <div class="section-header">
+                <h2>SELL SIGNALS</h2>
+                <span class="badge">BEARISH</span>
+            </div>
+            <div class="rec-grid" id="sell-recommendations"></div>
+        </section>
+
+        <!-- Spreads Tab -->
+        <section id="tab-spreads" class="tab-content">
+            <div class="spreads-layout">
+                <div class="spread-section">
+                    <div class="section-header">
+                        <h2>BULL CALL SPREAD</h2>
+                        <span class="badge">MOD. BULLISH</span>
+                    </div>
+                    <div class="spread-cards" id="bull-call-spreads"></div>
+                </div>
+                <div class="spread-section">
+                    <div class="section-header">
+                        <h2>BEAR CALL SPREAD</h2>
+                        <span class="badge">MOD. BEARISH</span>
+                    </div>
+                    <div class="spread-cards" id="bear-call-spreads"></div>
+                </div>
+                <div class="spread-section">
+                    <div class="section-header">
+                        <h2>BULL PUT SPREAD</h2>
+                        <span class="badge">MOD. BULLISH</span>
+                    </div>
+                    <div class="spread-cards" id="bull-put-spreads"></div>
+                </div>
+                <div class="spread-section">
+                    <div class="section-header">
+                        <h2>BEAR PUT SPREAD</h2>
+                        <span class="badge">MOD. BEARISH</span>
+                    </div>
+                    <div class="spread-cards" id="bear-put-spreads"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Backtest Tab -->
+        <section id="tab-backtest" class="tab-content">
+            <div class="section-header">
+                <h2>STRATEGY BACKTESTER</h2>
+            </div>
+            <div class="backtest-layout">
+                <div class="backtest-form-card">
+                    <h3>Configure Backtest</h3>
+                    <div class="form-group">
+                        <label>Symbol</label>
+                        <select id="bt-symbol" class="select-input">
+                            <option value="RELIANCE">RELIANCE</option>
+                            <option value="TCS">TCS</option>
+                            <option value="HDFCBANK">HDFCBANK</option>
+                            <option value="INFY">INFY</option>
+                            <option value="ICICIBANK">ICICIBANK</option>
+                            <option value="SBIN">SBIN</option>
+                            <option value="TATAMOTORS">TATAMOTORS</option>
+                            <option value="BAJFINANCE">BAJFINANCE</option>
+                            <option value="ITC">ITC</option>
+                            <option value="HCLTECH">HCLTECH</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Strategy</label>
+                        <select id="bt-strategy" class="select-input">
+                            <option value="sma_crossover">SMA Crossover (9/21)</option>
+                            <option value="rsi">RSI Overbought/Oversold</option>
+                            <option value="macd">MACD Signal Crossover</option>
+                            <option value="bollinger">Bollinger Band Breakout</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Initial Capital (₹)</label>
+                        <input type="number" id="bt-capital" class="text-input" value="100000" min="10000" step="10000">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>From Date</label>
+                            <input type="date" id="bt-from" class="text-input" value="2025-02-24">
+                        </div>
+                        <div class="form-group">
+                            <label>To Date</label>
+                            <input type="date" id="bt-to" class="text-input" value="2026-02-24">
+                        </div>
+                    </div>
+                    <button id="bt-run-btn" class="primary-btn">
+                        <span class="btn-icon">&gt;</span> RUN BACKTEST
+                    </button>
+                </div>
+                <div class="backtest-results-card" id="backtest-results">
+                    <div class="empty-state">
+                        <div class="empty-icon">&mdash;</div>
+                        <p>Configure and run a backtest to see results</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Paper Trade Tab -->
+        <section id="tab-paper-trade" class="tab-content">
+            <div class="section-header">
+                <h2>PAPER TRADING</h2>
+                <span class="badge" id="paper-live-badge">SIMULATION</span>
+            </div>
+
+            <!-- Portfolio Summary -->
+            <div class="paper-portfolio-strip" id="paper-portfolio-strip">
+                <div class="portfolio-card">
+                    <div class="portfolio-label">Cash Balance</div>
+                    <div class="portfolio-value" id="paper-cash">₹10,00,000</div>
+                </div>
+                <div class="portfolio-card">
+                    <div class="portfolio-label">Invested</div>
+                    <div class="portfolio-value" id="paper-invested">₹0</div>
+                </div>
+                <div class="portfolio-card">
+                    <div class="portfolio-label">Current Value</div>
+                    <div class="portfolio-value" id="paper-current">₹0</div>
+                </div>
+                <div class="portfolio-card">
+                    <div class="portfolio-label">Total P&L</div>
+                    <div class="portfolio-value" id="paper-pnl">₹0</div>
+                </div>
+                <div class="portfolio-card">
+                    <div class="portfolio-label">Total Value</div>
+                    <div class="portfolio-value" id="paper-total">₹10,00,000</div>
+                </div>
+            </div>
+
+            <div class="paper-layout">
+                <!-- Order Form -->
+                <div class="paper-form-card">
+                    <h3>ORDER ENTRY</h3>
+                    <div class="form-group">
+                        <label>Symbol</label>
+                        <select id="paper-symbol" class="select-input">
+                            <option value="RELIANCE">RELIANCE</option>
+                            <option value="TCS">TCS</option>
+                            <option value="HDFCBANK">HDFCBANK</option>
+                            <option value="INFY">INFY</option>
+                            <option value="ICICIBANK">ICICIBANK</option>
+                            <option value="SBIN">SBIN</option>
+                            <option value="BHARTIARTL">BHARTIARTL</option>
+                            <option value="TATAMOTORS">TATAMOTORS</option>
+                            <option value="ITC">ITC</option>
+                            <option value="KOTAKBANK">KOTAKBANK</option>
+                            <option value="BAJFINANCE">BAJFINANCE</option>
+                            <option value="SUNPHARMA">SUNPHARMA</option>
+                            <option value="WIPRO">WIPRO</option>
+                            <option value="HCLTECH">HCLTECH</option>
+                            <option value="TITAN">TITAN</option>
+                            <option value="MARUTI">MARUTI</option>
+                            <option value="AXISBANK">AXISBANK</option>
+                            <option value="LT">LT</option>
+                            <option value="NTPC">NTPC</option>
+                            <option value="HINDUNILVR">HINDUNILVR</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity</label>
+                        <input type="number" id="paper-qty" class="text-input" value="10" min="1" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Price (₹) — leave 0 for market price</label>
+                        <input type="number" id="paper-price" class="text-input" value="0" min="0" step="0.05">
+                    </div>
+                    <div class="paper-btn-row">
+                        <button id="paper-buy-btn" class="paper-action buy">BUY</button>
+                        <button id="paper-sell-btn" class="paper-action sell">SELL</button>
+                    </div>
+                    <div id="paper-order-status" class="paper-order-status"></div>
+                    <button id="paper-reset-btn" class="paper-reset-btn">RESET PORTFOLIO</button>
+                </div>
+
+                <!-- Positions + History -->
+                <div class="paper-results-card">
+                    <h4 class="bt-trades-title">OPEN POSITIONS</h4>
+                    <div id="paper-positions" style="overflow-x:auto">
+                        <div class="empty-state" style="min-height:200px">
+                            <div class="empty-icon">&mdash;</div>
+                            <p>No open positions yet. Place a trade to begin.</p>
+                        </div>
+                    </div>
+
+                    <h4 class="bt-trades-title" style="margin-top:24px">TRADE HISTORY</h4>
+                    <div id="paper-trades" style="overflow-x:auto">
+                        <div class="empty-state" style="min-height:150px">
+                            <div class="empty-icon">&mdash;</div>
+                            <p>No trades yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Advisor Tab — Strategy Dashboard -->
+        <section id="tab-advisor" class="tab-content">
+            <!-- Strategy Input Panel -->
+            <div class="strategy-input-panel">
+                <div class="strategy-input-row">
+                    <div class="strategy-field">
+                        <label>INVESTMENT BUDGET</label>
+                        <div class="input-with-prefix">
+                            <span class="input-prefix">₹</span>
+                            <input type="number" id="advisor-budget" value="100000" min="1000" step="1000">
+                        </div>
+                    </div>
+                    <div class="strategy-field">
+                        <label>RISK LEVEL</label>
+                        <div class="risk-selector">
+                            <button class="risk-btn" data-risk="conservative">Conservative</button>
+                            <button class="risk-btn active" data-risk="moderate">Moderate</button>
+                            <button class="risk-btn" data-risk="aggressive">Aggressive</button>
+                        </div>
+                    </div>
+                    <div class="strategy-field strategy-action">
+                        <button class="strategy-generate-btn" id="strategy-generate-btn">
+                            <span class="btn-icon">⚡</span> GENERATE TODAY'S STRATEGY
+                        </button>
+                    </div>
+                </div>
+                <!-- Auto-refresh timer -->
+                <div class="strategy-timer-bar" id="strategy-timer-bar" style="display:none">
+                    <div class="timer-left">
+                        <span class="timer-dot"></span>
+                        <span class="timer-label">LIVE STRATEGY</span>
+                        <span class="timer-refresh-count" id="timer-refresh-count"></span>
+                    </div>
+                    <div class="timer-right">
+                        <span class="timer-text">Next refresh in</span>
+                        <span class="timer-countdown" id="timer-countdown">5:00</span>
+                        <div class="timer-progress-track">
+                            <div class="timer-progress-fill" id="timer-progress-fill"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strategy Dashboard (hidden until generated) -->
+            <div id="strategy-dashboard" style="display:none">
+
+                <!-- Market Pulse -->
+                <div class="strat-section strat-pulse" id="strat-pulse">
+                    <div class="strat-pulse-header">
+                        <div class="pulse-outlook">
+                            <span class="pulse-label">MARKET OUTLOOK</span>
+                            <span class="pulse-badge" id="pulse-badge">—</span>
+                        </div>
+                        <div class="pulse-stats">
+                            <div class="pulse-stat">
+                                <span class="ps-val green" id="pulse-buy-count">0</span>
+                                <span class="ps-lbl">BUY</span>
+                            </div>
+                            <div class="pulse-stat">
+                                <span class="ps-val yellow" id="pulse-hold-count">0</span>
+                                <span class="ps-lbl">HOLD</span>
+                            </div>
+                            <div class="pulse-stat">
+                                <span class="ps-val red" id="pulse-sell-count">0</span>
+                                <span class="ps-lbl">SELL</span>
+                            </div>
+                            <div class="pulse-stat">
+                                <span class="ps-val cyan" id="pulse-stocks-count">0</span>
+                                <span class="ps-lbl">SCANNED</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="pulse-text" id="pulse-text">—</p>
+                    <!-- Top / Bottom sectors -->
+                    <div class="pulse-sectors" id="pulse-sectors"></div>
+                </div>
+
+                <!-- Portfolio Health -->
+                <div class="strat-section strat-portfolio" id="strat-portfolio">
+                    <div class="strat-section-header">
+                        <h3>💼 PORTFOLIO STATUS</h3>
+                        <span class="strat-badge" id="portfolio-badge">NO POSITIONS</span>
+                    </div>
+                    <div class="portfolio-summary-strip" id="portfolio-summary-strip"></div>
+                    <div class="portfolio-positions" id="portfolio-positions"></div>
+                </div>
+
+                <!-- Today's Recommendations -->
+                <div class="strat-section strat-recs">
+                    <div class="strat-section-header">
+                        <h3>🎯 TODAY'S RECOMMENDATIONS</h3>
+                        <span class="strat-badge green" id="recs-count-badge">0 ACTIONS</span>
+                    </div>
+                    <div class="strat-recs-grid" id="strat-recs-grid">
+                        <div class="empty-state" style="min-height:120px">
+                            <p>No recommendations yet.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- News Driving Strategy -->
+                <div class="strat-section strat-news">
+                    <div class="strat-section-header">
+                        <h3>📰 NEWS DRIVING STRATEGY</h3>
+                    </div>
+                    <div class="strat-news-list" id="strat-news-list"></div>
+                </div>
+
+                <!-- Risk Alerts -->
+                <div class="strat-section strat-alerts" id="strat-alerts" style="display:none">
+                    <div class="strat-section-header">
+                        <h3>⚠️ RISK ALERTS</h3>
+                    </div>
+                    <div class="strat-alerts-list" id="strat-alerts-list"></div>
+                </div>
+            </div>
+
+            <!-- Pre-strategy loading state -->
+            <div id="strategy-loading" style="display:none">
+                <div class="strategy-loading-content">
+                    <div class="strategy-loading-spinner"></div>
+                    <h3>Generating Your Day Strategy...</h3>
+                    <p>Scanning 100+ stocks • Analyzing options flow • Reading news sentiment</p>
+                </div>
+            </div>
+
+            <!-- Initial empty state (before first generation) -->
+            <div id="strategy-empty">
+                <div class="strategy-empty-content">
+                    <div class="strategy-empty-icon">📊</div>
+                    <h3>AI-Powered Day Trading Strategy</h3>
+                    <p>Enter your budget, select risk level, and click <strong>GENERATE TODAY'S STRATEGY</strong> to get portfolio-aware recommendations based on real-time market data, news sentiment, and options flow analysis.</p>
+                    <div class="strategy-features">
+                        <div class="sf-item"><span>📈</span> Real-time market analysis with 5-min auto-refresh</div>
+                        <div class="sf-item"><span>💼</span> Portfolio-aware — knows your paper trading positions</div>
+                        <div class="sf-item"><span>📰</span> News sentiment driving buy/sell decisions</div>
+                        <div class="sf-item"><span>🎯</span> Entry price, stop-loss & target for each pick</div>
+                        <div class="sf-item"><span>⚡</span> One-click execution to paper trading</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Autonomous Trader Tab -->
+        <section id="tab-auto-trader" class="tab-content">
+            <!-- Setup Screen (shown when bot is NOT running and no capital) -->
+            <div id="auto-setup" class="auto-setup-screen">
+                <div class="auto-hero">
+                    <div class="auto-hero-glow"></div>
+                    <div class="auto-hero-icon">🤖</div>
+                    <h2 class="auto-hero-title">AUTONOMOUS <span class="auto-accent">AI TRADER</span></h2>
+                    <p class="auto-hero-sub">Deploy capital and let the AI trade autonomously using real-time market data, fundamentals analysis, and sentiment intelligence. ~100 trades/day.</p>
+                    
+                    <div class="auto-features-grid">
+                        <div class="auto-feature"><span class="af-icon">📈</span><span class="af-text">Momentum Trading</span></div>
+                        <div class="auto-feature"><span class="af-icon">🔄</span><span class="af-text">Mean Reversion</span></div>
+                        <div class="auto-feature"><span class="af-icon">📰</span><span class="af-text">News Catalyst</span></div>
+                        <div class="auto-feature"><span class="af-icon">🛡️</span><span class="af-text">Auto Stop-Loss</span></div>
+                        <div class="auto-feature"><span class="af-icon">🎯</span><span class="af-text">Take Profit</span></div>
+                        <div class="auto-feature"><span class="af-icon">⚖️</span><span class="af-text">Auto Rebalance</span></div>
+                    </div>
+
+                    <div class="auto-deploy-form">
+                        <label class="auto-deploy-label">HOW MUCH DO YOU WANT TO INVEST?</label>
+                        <div class="auto-input-row">
+                            <div class="auto-input-wrap">
+                                <span class="auto-input-prefix">₹</span>
+                                <input type="number" id="auto-invest-amount" class="auto-invest-input" value="500000" min="10000" step="10000" placeholder="Enter amount...">
+                            </div>
+                            <button class="auto-deploy-btn" id="auto-deploy-btn">
+                                <span class="deploy-pulse"></span>
+                                DEPLOY CAPITAL
+                            </button>
+                        </div>
+                        <div class="auto-presets">
+                            <button class="auto-preset" data-amount="100000">₹1L</button>
+                            <button class="auto-preset" data-amount="500000">₹5L</button>
+                            <button class="auto-preset" data-amount="1000000">₹10L</button>
+                            <button class="auto-preset" data-amount="2500000">₹25L</button>
+                            <button class="auto-preset" data-amount="5000000">₹50L</button>
+                        </div>
+                        <p class="auto-disclaimer">⚠️ Paper trading only — no real money involved. The bot trades NSE stocks using live prices.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Dashboard (shown when bot is running) -->
+            <div id="auto-dashboard" style="display:none">
+                <!-- Top Stats Bar -->
+                <div class="auto-stats-bar">
+                    <div class="auto-stat-card auto-stat-pnl">
+                        <div class="auto-stat-label">TOTAL P&L</div>
+                        <div class="auto-stat-value" id="auto-total-pnl">₹0</div>
+                        <div class="auto-stat-sub" id="auto-pnl-pct">0%</div>
+                    </div>
+                    <div class="auto-stat-card">
+                        <div class="auto-stat-label">PORTFOLIO VALUE</div>
+                        <div class="auto-stat-value" id="auto-portfolio-value">₹0</div>
+                        <div class="auto-stat-sub" id="auto-cash-left">Cash: ₹0</div>
+                    </div>
+                    <div class="auto-stat-card">
+                        <div class="auto-stat-label">TRADES TODAY</div>
+                        <div class="auto-stat-value" id="auto-trade-count">0</div>
+                        <div class="auto-stat-sub" id="auto-daily-pnl">Daily: ₹0</div>
+                    </div>
+                    <div class="auto-stat-card">
+                        <div class="auto-stat-label">WIN RATE</div>
+                        <div class="auto-stat-value" id="auto-win-rate">0%</div>
+                        <div class="auto-stat-sub" id="auto-wl-count">W: 0 / L: 0</div>
+                    </div>
+                    <div class="auto-stat-card auto-stat-status">
+                        <div class="auto-stat-label">BOT STATUS</div>
+                        <div class="auto-status-indicator">
+                            <span class="auto-status-dot" id="auto-status-dot"></span>
+                            <span class="auto-status-text" id="auto-status-text">OFFLINE</span>
+                        </div>
+                        <div class="auto-stat-sub" id="auto-status-msg">—</div>
+                    </div>
+                </div>
+
+                <!-- Control Bar -->
+                <div class="auto-control-bar">
+                    <div class="auto-control-left">
+                        <span class="auto-scores-badge" id="auto-scores-badge">0 stocks scanned</span>
+                        <span class="auto-market-badge" id="auto-market-badge">MARKET CLOSED</span>
+                    </div>
+                    <div class="auto-control-right">
+                        <button class="auto-halt-btn" id="auto-halt-btn">
+                            ⏹ HALT TRADING
+                        </button>
+                        <button class="auto-reset-btn" id="auto-reset-btn">RESET</button>
+                    </div>
+                </div>
+
+                <!-- Main Dashboard Grid -->
+                <div class="auto-grid">
+                    <!-- Left: Positions -->
+                    <div class="auto-positions-card">
+                        <div class="auto-card-header">
+                            <h3>LIVE POSITIONS</h3>
+                            <span class="auto-pos-count" id="auto-pos-count">0</span>
+                        </div>
+                        <div class="auto-positions-list" id="auto-positions-list">
+                            <div class="auto-empty">No positions yet — bot will start trading when market opens</div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Trade Feed + Stats -->
+                    <div class="auto-right-col">
+                        <!-- Live Trade Feed -->
+                        <div class="auto-feed-card">
+                            <div class="auto-card-header">
+                                <h3>LIVE TRADE FEED</h3>
+                                <span class="auto-feed-live"><span class="feed-dot"></span> LIVE</span>
+                            </div>
+                            <div class="auto-feed-list" id="auto-feed-list">
+                                <div class="auto-empty">Waiting for trades...</div>
+                            </div>
+                        </div>
+
+                        <!-- Strategy Stats -->
+                        <div class="auto-strats-card">
+                            <div class="auto-card-header">
+                                <h3>STRATEGY BREAKDOWN</h3>
+                            </div>
+                            <div class="auto-strats-list" id="auto-strats-list">
+                                <div class="auto-empty">No strategy data yet</div>
+                            </div>
+                        </div>
+
+                        <!-- Sector Allocation -->
+                        <div class="auto-sectors-card">
+                            <div class="auto-card-header">
+                                <h3>SECTOR ALLOCATION</h3>
+                            </div>
+                            <div class="auto-sectors-list" id="auto-sectors-list">
+                                <div class="auto-empty">No allocations yet</div>
+                            </div>
+                        </div>
+
+                        <!-- Best/Worst Trades -->
+                        <div class="auto-highlights-card">
+                            <div class="auto-highlight">
+                                <span class="auto-hl-label">BEST TRADE</span>
+                                <span class="auto-hl-value green" id="auto-best-trade">—</span>
+                            </div>
+                            <div class="auto-highlight">
+                                <span class="auto-hl-label">WORST TRADE</span>
+                                <span class="auto-hl-value red" id="auto-worst-trade">—</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Session History -->
+                <div class="auto-sessions-card" id="auto-sessions-card" style="display:none">
+                    <div class="auto-card-header">
+                        <h3>SESSION HISTORY</h3>
+                    </div>
+                    <div class="auto-sessions-list" id="auto-sessions-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Crypto Trader Tab -->
+        <section id="tab-crypto-trader" class="tab-content">
+            <div id="crypto-setup" class="auto-setup-screen">
+                <div class="auto-hero">
+                    <div class="auto-hero-glow" style="background: radial-gradient(circle at center, rgba(247, 147, 26, 0.2) 0%, transparent 70%);"></div>
+                    <div class="auto-hero-icon">₿</div>
+                    <h2 class="auto-hero-title">CRYPTO <span class="auto-accent" style="color: #f7931a;">AI TRADER</span></h2>
+                    <p class="auto-hero-sub">Deploy a 24/7 dedicated high-frequency crypto trading AI. Goal: Scale $10,000 to $45,000 utilizing statistical arbitrage and momentum strategies on the Top 10 tokens.</p>
+                    
+                    <div class="auto-deploy-form">
+                        <button class="auto-deploy-btn" id="crypto-deploy-btn" style="background: #f7931a; box-shadow: 0 4px 15px rgba(247, 147, 26, 0.4);">
+                            <span class="deploy-pulse"></span>
+                            DEPLOY ALGORITHM
+                        </button>
+                        <p class="auto-disclaimer">⚠️ Simulated $10,000 paper trading utilizing live yFinance crypto pricing data.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Crypto Dashboard -->
+            <div id="crypto-dashboard" style="display:none">
+                <!-- Top Stats Bar -->
+                <div class="auto-stats-bar">
+                    <div class="auto-stat-card auto-stat-pnl">
+                        <div class="auto-stat-label">TOTAL P&L</div>
+                        <div class="auto-stat-value" id="crypto-total-pnl">$0.00</div>
+                        <div class="auto-stat-sub" id="crypto-pnl-pct">0%</div>
+                    </div>
+                    <div class="auto-stat-card">
+                        <div class="auto-stat-label">PORTFOLIO VALUE</div>
+                        <div class="auto-stat-value" id="crypto-portfolio-value">$0.00</div>
+                        <div class="auto-stat-sub" id="crypto-cash-left">Cash: $0.00</div>
+                    </div>
+                    <div class="auto-stat-card">
+                        <div class="auto-stat-label">TRADES TODAY</div>
+                        <div class="auto-stat-value" id="crypto-trade-count" style="color: #f7931a;">0 / 150+</div>
+                        <div class="auto-stat-sub" id="crypto-target">Target: $45,000</div>
+                    </div>
+                    <div class="auto-stat-card auto-stat-status">
+                        <div class="auto-stat-label">BOT STATUS</div>
+                        <div class="auto-status-indicator">
+                            <span class="auto-status-dot" id="crypto-status-dot"></span>
+                            <span class="auto-status-text" id="crypto-status-text">OFFLINE</span>
+                        </div>
+                        <div class="auto-stat-sub" id="crypto-status-msg">—</div>
+                    </div>
+                </div>
+
+                <!-- Control Bar -->
+                <div class="auto-control-bar">
+                    <div class="auto-control-left">
+                        <span class="auto-scores-badge" id="crypto-market-badge" style="background: rgba(247, 147, 26, 0.2); color: #f7931a; border-color: rgba(247, 147, 26, 0.4);">24/7 ACTIVE</span>
+                    </div>
+                    <div class="auto-control-right">
+                        <button class="primary-btn" id="crypto-export-btn" style="background: rgba(46, 204, 113, 0.1); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.4);">
+                            ⬇️ EXPORT BACKTEST / ARB REASONS
+                        </button>
+                        <button class="auto-halt-btn" id="crypto-halt-btn">
+                            ⏹ HALT TRADING
+                        </button>
+                        <button class="auto-reset-btn" id="crypto-reset-btn">RESET</button>
+                    </div>
+                </div>
+
+                <!-- Main Dashboard Grid -->
+                <div class="auto-grid">
+                    <div class="auto-positions-card">
+                        <div class="auto-card-header">
+                            <h3>LIVE POSITIONS</h3>
+                        </div>
+                        <div class="auto-positions-list" id="crypto-positions-list">
+                            <div class="auto-empty">No positions yet</div>
+                        </div>
+                    </div>
+
+                    <div class="auto-right-col">
+                        <div class="auto-feed-card" style="height: 400px; overflow-y: auto;">
+                            <div class="auto-card-header">
+                                <h3>LIVE TRADE FEED</h3>
+                                <span class="auto-feed-live"><span class="feed-dot"></span> LIVE</span>
+                            </div>
+                            <div class="auto-feed-list" id="crypto-feed-list">
+                                <div class="auto-empty">Waiting for trades...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Pick Detail Modal -->
+    <div id="pick-detail-modal" class="pick-detail-overlay">
+        <div class="pick-detail-panel">
+            <div class="pick-detail-header">
+                <div class="pdh-left">
+                    <h2 id="pd-symbol">—</h2>
+                    <span id="pd-company" class="pd-company">—</span>
+                    <span id="pd-signal" class="pd-signal-badge">—</span>
+                </div>
+                <button class="pd-close-btn" id="pd-close-btn">✕</button>
+            </div>
+
+            <div class="pick-detail-body">
+                <!-- Price + Score Hero -->
+                <div class="pd-hero">
+                    <div class="pd-price-block">
+                        <span class="pd-price" id="pd-price">—</span>
+                        <span class="pd-change" id="pd-change">—</span>
+                    </div>
+                    <div class="pd-score-ring" id="pd-score-ring">
+                        <span class="pd-score-num" id="pd-score-num">—</span>
+                        <span class="pd-score-label">AI SCORE</span>
+                    </div>
+                </div>
+
+                <!-- AI Narrative -->
+                <div class="pd-section">
+                    <h3>🤖 AI Analysis Summary</h3>
+                    <p class="pd-narrative" id="pd-narrative">—</p>
+                </div>
+
+                <!-- Fundamentals -->
+                <div class="pd-section">
+                    <h3>📊 Fundamentals</h3>
+                    <div class="pd-fundamentals-grid" id="pd-fundamentals">
+                    </div>
+                </div>
+
+                <!-- Technical Analysis -->
+                <div class="pd-section">
+                    <h3>📈 Technical Analysis</h3>
+                    <div class="pd-tech-content" id="pd-tech">
+                    </div>
+                </div>
+
+                <!-- Market Sentiment -->
+                <div class="pd-section">
+                    <h3>🏛️ Market Sentiment (Options Flow)</h3>
+                    <div class="pd-market-content" id="pd-market">
+                    </div>
+                </div>
+
+                <!-- News & Sentiment -->
+                <div class="pd-section">
+                    <h3>📰 News Sentiment</h3>
+                    <div class="pd-news-sentiment" id="pd-news-sentiment"></div>
+                    <div class="pd-news-list" id="pd-news-list">
+                    </div>
+                </div>
+
+                <!-- Allocation -->
+                <div class="pd-section pd-alloc-section">
+                    <h3>💰 Allocation</h3>
+                    <div class="pd-alloc-grid" id="pd-alloc">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expanded Chart Modal -->
+    <div id="chart-modal" class="chart-modal">
+        <div class="chart-modal-content">
+            <div class="chart-modal-header">
+                <h3 id="modal-chart-title">Chart</h3>
+                <button class="close-modal-btn" id="close-modal-btn">✕</button>
+            </div>
+            <div id="modal-chart" class="modal-chart-area"></div>
+        </div>
+    </div>
+
+    <!-- Stock Detail Side Panel -->
+    <div id="stock-panel-backdrop" class="stock-panel-backdrop"></div>
+    <div id="stock-panel" class="stock-panel">
+        <div class="panel-header">
+            <div class="panel-stock-info">
+                <h3 id="panel-stock-name">RELIANCE</h3>
+                <div>
+                    <span class="panel-price" id="panel-price">0</span>
+                    <span class="panel-change" id="panel-change">0%</span>
+                </div>
+            </div>
+            <button class="close-panel-btn" id="close-panel-btn">ESC</button>
+        </div>
+        <div class="panel-body">
+            <div class="panel-section-title">
+                NEWS <span class="news-badge" id="panel-news-badge">LOADING</span>
+            </div>
+            <div id="panel-news-list" class="panel-news-list">
+                <div class="panel-loading">Fetching news...</div>
+            </div>
+
+            <div class="panel-actions">
+                <h4>ACTIONS</h4>
+                <button class="panel-action-btn" id="panel-view-chart">> VIEW CHART</button>
+                <button class="panel-action-btn" id="panel-view-options">> OPTIONS CHAIN</button>
+                <button class="panel-action-btn" id="panel-run-backtest">> BACKTEST SYMBOL</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./main.js?v=2.0"></script>
+</body>
+
+</html>
