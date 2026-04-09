@@ -35,13 +35,15 @@ class CryptoService:
             
             # Download returns a multi-index DataFrame
             if not data.empty:
-                # Get the last row
-                last_row = data.iloc[-1]
-                # If we have multiple columns, we look at 'Close' and 'Volume'
-                close_prices = data['Close'].iloc[-1]
-                prev_close = data['Close'].iloc[0] # first row of the day
+                close_df = data['Close'].ffill().bfill()
+                close_prices = close_df.iloc[-1]
+                prev_close = close_df.iloc[0]
                 
-                volumes = data['Volume'].iloc[-1] if 'Volume' in data else None
+                if 'Volume' in data:
+                    vol_df = data['Volume'].ffill().bfill()
+                    volumes = vol_df.iloc[-1]
+                else:
+                    volumes = None
                 
                 for sym in CRYPTO_SYMBOLS:
                     try:
