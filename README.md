@@ -1,0 +1,2 @@
+# nseterminal
+nse trading terminal 
