@@ -159,21 +159,21 @@ class CryptoTrader:
             avg = pos["avgPrice"]
             pnl_pct = (cur_price - avg) / avg * 100
             
-            # High frequency scalping: Take profit at +1.5%, stop loss at -1.0% to force frequent trades
+            # High frequency scalping: Take profit at +0.6%, stop loss at -0.4% to force frequent trades
             # Arbitrage simulation: if rapid volume spike, sell into it
             signal = None
             reason = ""
             tag = "standard"
-            if pnl_pct >= 1.5:
+            if pnl_pct >= 0.6:
                 signal = "TAKE_PROFIT"
                 reason = f"Scalp target reached: +{pnl_pct:.2f}%"
                 
-            elif pnl_pct <= -1.0:
+            elif pnl_pct <= -0.4:
                 signal = "STOP_LOSS"
                 reason = f"Loss cut at {pnl_pct:.2f}%"
                 
             # Simulated arbitrage signal (randomized for realism since we don't have L2 order books)
-            if not signal and random.random() < 0.05 and pnl_pct > 0.5:
+            if not signal and random.random() < 0.20 and pnl_pct > 0.15:
                 signal = "ARBITRAGE_EXIT"
                 reason = "Cross-exchange spread reversal detected"
                 tag = "arbitrage"
@@ -198,19 +198,19 @@ class CryptoTrader:
                 signal = None
                 reason = ""
                 tag = "standard"
-                if chg < -1.0 and random.random() < 0.3:
+                if chg < -0.5 and random.random() < 0.40:
                     signal = "BTFD"
                     reason = f"Dip buying after {chg:.2f}% drop"
-                elif chg > 1.5 and random.random() < 0.3:
+                elif chg > 0.5 and random.random() < 0.40:
                     signal = "MOMENTUM"
                     reason = f"Riding positive trend (+{chg:.2f}%)"
-                elif random.random() < 0.05:
+                elif random.random() < 0.15:
                     signal = "STAT_ARB"
                     reason = "Statistical arbitrage entry opportunity detected"
                     tag = "arbitrage"
                     
                 if signal:
-                    invest_amt = min(self.cash * 0.5, 2000) # Max 2k per trade or 50% cash
+                    invest_amt = min(self.cash * 0.25, 1200) # Max 1.2k per trade or 25% cash
                     if invest_amt > 10:
                         qty = invest_amt / cur_price
                         buys.append({"sym": sym, "qty": qty, "price": cur_price, "strat": signal, "reason": reason, "tag": tag})
