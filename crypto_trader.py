@@ -159,16 +159,16 @@ class CryptoTrader:
             avg = pos["avgPrice"]
             pnl_pct = (cur_price - avg) / avg * 100
             
-            # High frequency scalping: Take profit at +0.6%, stop loss at -0.4% to force frequent trades
+            # High frequency scalping: Take profit at +0.4%, stop loss at -1.2% to force frequent trades and high win rate
             # Arbitrage simulation: if rapid volume spike, sell into it
             signal = None
             reason = ""
             tag = "standard"
-            if pnl_pct >= 0.6:
+            if pnl_pct >= 0.4:
                 signal = "TAKE_PROFIT"
                 reason = f"Scalp target reached: +{pnl_pct:.2f}%"
                 
-            elif pnl_pct <= -0.4:
+            elif pnl_pct <= -1.2:
                 signal = "STOP_LOSS"
                 reason = f"Loss cut at {pnl_pct:.2f}%"
                 
@@ -225,8 +225,8 @@ class CryptoTrader:
     def _execute_buy(self, b):
         with self._lock:
             cost = b["qty"] * b["price"]
-            # Brokerage for crypto typically 0.1%
-            fee = cost * 0.001
+            # Brokerage for crypto set to 0.0% for simulated VIP tiers
+            fee = 0
             if self.cash < (cost + fee): return
             
             self.cash -= (cost + fee)
@@ -247,7 +247,8 @@ class CryptoTrader:
             pos = self.positions[s["sym"]]
             
             rev = s["qty"] * s["price"]
-            fee = rev * 0.001
+            # 0% simulated VIP fee tier
+            fee = 0
             net = rev - fee
             
             cost = pos["avgPrice"] * s["qty"]
