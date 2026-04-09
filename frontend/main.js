@@ -3238,7 +3238,9 @@ function renderCryptoStatus(statusData) {
         posList.innerHTML = '<div class="auto-empty">No active crypto positions</div>';
     } else {
         posList.innerHTML = posEntries.map(([sym, pos]) => {
-            const val = pos.qty * pos.avgPrice;
+            const val = pos.qty * pos.currentPrice;
+            const pnlClass = pos.pnl >= 0 ? 'green' : 'red';
+            const pnlPrefix = pos.pnl >= 0 ? '+' : '';
             return `
                 <div class="auto-pos-item">
                     <div style="flex:1">
@@ -3246,7 +3248,8 @@ function renderCryptoStatus(statusData) {
                         <div class="auto-pos-meta">${formatNumber(pos.qty)} × $${formatNumber(pos.avgPrice)}</div>
                     </div>
                     <div style="text-align:right">
-                        <div class="auto-pos-val">$${formatNumber(val)}</div>
+                        <div class="auto-pos-price">$${formatNumber(pos.currentPrice)} <span class="${pnlClass}">(${pnlPrefix}${pos.pnlPct}%)</span></div>
+                        <div class="auto-pos-pnl ${pnlClass}">${pnlPrefix}$${formatNumber(Math.abs(pos.pnl))}</div>
                     </div>
                 </div>`;
         }).join('');

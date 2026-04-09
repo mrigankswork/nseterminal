@@ -1181,17 +1181,44 @@ def crypto_reset():
 
 @app.route("/api/crypto/status")
 def crypto_status():
-    total_val = crypto_trader.cash + sum(p['qty'] * p['avgPrice'] for p in crypto_trader.positions.values())
+    from crypto_service import crypto_service
+    live_quotes = crypto_service.get_live_quotes() or {}
+    
+    total_val = crypto_trader.cash
+    unrealized_pnl = 0
+    enriched_positions = {}
+    
+    for sym, pos in crypto_trader.positions.items():
+        quote = live_quotes.get(sym)
+        current_price = quote["lastPrice"] if quote else pos["avgPrice"]
+        val = pos["qty"] * current_price
+        cost = pos["qty"] * pos["avgPrice"]
+        pnl = val - cost
+        pnl_pct = (current_price - pos["avgPrice"]) / pos["avgPrice"] * 100 if pos["avgPrice"] > 0 else 0
+        
+        total_val += val
+        unrealized_pnl += pnl
+        
+        enriched_positions[sym] = {
+            "qty": pos["qty"],
+            "avgPrice": pos["avgPrice"],
+            "currentPrice": current_price,
+            "pnl": pnl,
+            "pnlPct": round(pnl_pct, 2)
+        }
+        
+    overall_pnl = crypto_trader._total_pnl + unrealized_pnl
+    
     return jsonify({
         "running": crypto_trader.running,
         "capital": crypto_trader.initial_capital,
         "cash": crypto_trader.cash,
         "total_value": total_val,
-        "total_pnl": crypto_trader._total_pnl,
-        "pnl_pct": (total_val - crypto_trader.initial_capital) / crypto_trader.initial_capital * 100 if crypto_trader.initial_capital > 0 else 0,
+        "total_pnl": overall_pnl,
+        "pnl_pct": overall_pnl / crypto_trader.initial_capital * 100 if crypto_trader.initial_capital > 0 else 0,
         "trade_count_today": crypto_trader._trade_count_today,
         "status_message": crypto_trader._status_message,
-        "positions": crypto_trader.positions,
+        "positions": enriched_positions,
         "target": crypto_trader.target_capital,
         "initial": crypto_trader.initial_capital
     })
