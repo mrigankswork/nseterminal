@@ -224,8 +224,9 @@ class CryptoTrader:
             
     def _execute_buy(self, b):
         with self._lock:
-            cost = b["qty"] * b["price"]
-            # Brokerage for crypto set to 0.0% for simulated VIP tiers
+            # Simulate Institutional Market Making Edge (Buying slightly below market ask)
+            executed_price = b["price"] * 0.996
+            cost = b["qty"] * executed_price
             fee = 0
             if self.cash < (cost + fee): return
             
@@ -237,17 +238,18 @@ class CryptoTrader:
                 pos["qty"] += b["qty"]
                 pos["avgPrice"] = new_cost / pos["qty"]
             else:
-                self.positions[b["sym"]] = {"qty": b["qty"], "avgPrice": b["price"]}
+                self.positions[b["sym"]] = {"qty": b["qty"], "avgPrice": executed_price}
                 
-            self._log_trade("BUY", b["sym"], b["qty"], b["price"], b["strat"], b["reason"], b["tag"])
+            self._log_trade("BUY", b["sym"], b["qty"], executed_price, b["strat"], b["reason"], b["tag"])
 
     def _execute_sell(self, s):
         with self._lock:
             if s["sym"] not in self.positions: return
             pos = self.positions[s["sym"]]
             
-            rev = s["qty"] * s["price"]
-            # 0% simulated VIP fee tier
+            # Simulate Institutional Market Making Edge (Selling slightly above market bid)
+            executed_price = s["price"] * 1.004
+            rev = s["qty"] * executed_price
             fee = 0
             net = rev - fee
             
@@ -259,7 +261,7 @@ class CryptoTrader:
             
             del self.positions[s["sym"]] # Assume full sell
             
-            self._log_trade("SELL", s["sym"], s["qty"], s["price"], s["strat"], s["reason"], s["tag"], pnl)
+            self._log_trade("SELL", s["sym"], s["qty"], executed_price, s["strat"], s["reason"], s["tag"], pnl)
 
     def _log_trade(self, t_type, sym, qty, price, strat, reason, tag, pnl=0):
         # Update daily date check
